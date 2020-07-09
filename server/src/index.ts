@@ -64,7 +64,7 @@ import { createAccessToken, createRefreshToken } from "./auth";
 
   apolloServer.applyMiddleware({ app, cors: false });
 
-  app.listen(4000, () => {
+  app.listen(5000, () => {
     console.log("express server started");
   });
 })();

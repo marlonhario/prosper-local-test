@@ -9,17 +9,21 @@ import {
   UseMiddleware,
   Int
 } from "type-graphql";
-import { hash, compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { User } from "./entity/User";
 import { MyContext } from "./MyContext";
-import { createRefreshToken, createAccessToken, createVerificationToken } from "./auth";
+import { 
+  createRefreshToken, 
+  createAccessToken, 
+  createVerificationToken, 
+  verifyToken, 
+  decodeToken 
+} from "./auth";
 import { isAuth } from "./isAuth";
 import { sendRefreshToken } from "./sendRefreshToken";
 import { getConnection } from "typeorm";
 import { verify } from "jsonwebtoken";
 import * as nodemailer from 'nodemailer';
-// import { nodemailer } from "nodemailer"
-// const nodemailer = require('nodemailer');
 
 var transporter = nodemailer.createTransport({
 	service: 'gmail',
@@ -45,11 +49,36 @@ export class UserResolver {
 	}
 	
 	@Mutation(() => String)
-  verification(
+  async verification(
     @Arg("token") token: string
 	) {
-		// console.log(token)
-    return `token: ${token}`;
+    if (token) {
+      const isVerifyToken: any = verifyToken(token);
+     
+      if (isVerifyToken) {
+        const getDecodedToken: any =  decodeToken(token);
+        const { email, password } = getDecodedToken;
+       
+        const hashedPassword = await hash(password, 12);
+
+        try {
+          await User.insert({
+            email,
+            password: hashedPassword
+          });
+        } catch (err) {
+          console.log('error while saving your account');
+          return 'error while saving your account';
+        }
+        console.log('Successfully create account');
+        return 'Successfully created account';
+      }
+    } else {
+      console.log('Trouble when verifying your token');
+      return 'Trouble when verifying your token'
+    }
+    console.log('Token invalid');
+    return 'Token invalid'
   }
 
 
@@ -128,11 +157,10 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
-  async register(
+  register(
     @Arg("email") email: string,
     @Arg("password") password: string
   ) {
-		const hashedPassword = await hash(password, 12);
 		const verificationDetails = createVerificationToken(
 			email,
 			password
@@ -153,20 +181,12 @@ export class UserResolver {
 
     transporter.sendMail( mailOptions, (error, info) => { 
       if (error) { 
-        return console.log(`error: ${error}`); 
+        console.log(`error: ${error}`);
+        return false;
       } 
       console.log(`Message Sent ${info.response}`); 
+      return true;
     }); 
-
-    try {
-      await User.insert({
-        email,
-        password: hashedPassword
-      });
-    } catch (err) {
-      console.log(err);
-      return false;
-    }
 
     return true;
   }

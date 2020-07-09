@@ -9,8 +9,8 @@ export const Verification: React.FC<RouteComponentProps> = ({ match, history }) 
 	// console.log(match.params);
 	// const { match, history } = props;
 	const { params } : any = match;
-	const { token } = params.token;
-
+	const { token } = params;
+  // console.log(params.token)
   // const [formData, setFormData] = useState({
   //   name: '',
   //   token: '',
@@ -49,7 +49,6 @@ export const Verification: React.FC<RouteComponentProps> = ({ match, history }) 
   //       toast.error(err.response.data.errors);
   //     });
   // };
-
   return (
     <form
 			onSubmit={async e => {
